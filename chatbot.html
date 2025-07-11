@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta de Violência Doméstica por RA - DF</title>
+
+<!-- Tailwind CSS para estilização rápida e responsiva -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Fonte do Google (Inter) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* Estilos personalizados para complementar o Tailwind */
+body {
+font-family: 'Inter', sans-serif;
+}
+.chat-window::-webkit-scrollbar { width: 8px; }
+.chat-window::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+.chat-window::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
+.chat-window::-webkit-scrollbar-thumb:hover { background: #475569; }
+.typing-indicator span {
+height: 8px;
+width: 8px;
+background-color: #94a3b8;
+display: inline-block;
+border-radius: 50%;
+animation: a 1.2s infinite ease-in-out;
+}
+.typing-indicator span:nth-child(2) { animation-delay: -1.0s; }
+.typing-indicator span:nth-child(3) { animation-delay: -0.8s; }
+@keyframes a {
+0%, 80%, 100% { transform: scale(0); }
+40% { transform: scale(1.0); }
+}
+.suggestion-btn, .action-btn {
+transition: all 0.2s ease-in-out;
+box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+.suggestion-btn:hover, .action-btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+/* Estilo para a tabela de texto */
+.data-table {
+font-family: monospace; /* Fonte monoespaçada para alinhamento */
+white-space: pre; /* Preserva espaços e quebras de linha */
+background-color: #e2e8f0; /* bg-blue-200 */
+padding: 0.75rem; /* p-3 */
+border-radius: 0.5rem; /* rounded-lg */
+margin-top: 0.5rem; /* mt-2 */
+color: #1a202c; /* text-gray-900 */
+overflow-x: auto; /* Permite rolagem horizontal se a tabela for muito larga */
+}
+</style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+<div class="chatbot-container bg-white w-full max-w-lg mx-4 sm:mx-0 rounded-2xl shadow-2xl flex flex-col overflow-hidden" style="height: 90vh; max-height: 800px;">
+
+<!-- Cabeçalho do Chat -->
+<header class="bg-pink-600 text-white p-4 flex items-center justify-between shadow-md z-10">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+<!-- Ícone para o tema de violência doméstica (ex: escudo ou coração com cruz) -->
+<svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-pink-600" viewBox="0 0 24 24" fill="currentColor">
+<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15H9v-2h2v2zm0-4H9V7h2v6zm4-3.5c0-.83-.67-1.5-1.5-1.5S12 8.67 12 9.5s.67 1.5 1.5 1.5S15 10.33 15 9.5z"/>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold">Assistente Violência Doméstica - DF</h1>
+<p class="text-sm text-pink-200">Online</p>
+</div>
+</div>
+</header>
+
+<!-- Janela de Chat -->
+<div id="chat-window" class="chat-window flex-1 p-6 overflow-y-auto space-y-6">
+<!-- Mensagens serão adicionadas aqui -->
+</div>
+
+<!-- Sugestões de Perguntas -->
+<div id="suggestions-box" class="px-4 pb-2 border-t border-gray-100 hidden">
+<p class="text-xs text-gray-500 mb-2 text-center">Sugestões ✨</p>
+<div id="suggestions-list" class="flex flex-wrap gap-2 justify-center">
+<!-- Botões de sugestão serão inseridos aqui -->
+</div>
+</div>
+
+<!-- Indicador de "Digitando..." -->
+<div id="typing-indicator" class="hidden p-6 pt-0">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+</div>
+<div class="bg-gray-200 rounded-r-2xl rounded-tl-2xl p-4 inline-block">
+<div class="typing-indicator"><span></span><span></span><span></span></div>
+</div>
+</div>
+</div>
+
+<!-- Formulário de Entrada -->
+<form id="chat-form" autocomplete="off" class="p-4 bg-white border-t border-gray-200 flex items-center gap-3">
+<button type="button" id="suggest-btn" title="Sugerir perguntas" class="flex-shrink-0 bg-pink-400 text-white rounded-full p-3 hover:bg-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-400 transition duration-300 shadow-sm">
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6"><path d="M12 3c.3 0 .6.1.8.4l1.6 2.9c.1.2.3.3.5.3h3.2c.4 0 .8.3 1 .7s.1.8-.2 1.1l-2.6 1.9c-.2.1-.3.4-.2.6l1 3.4c.1.4 0 .8-.4 1s-.9.2-1.2 0L12 16.4l-2.7 2c-.3.2-.7.2-1 0s-.6-.6-.4-1l1-3.4c.1-.2 0-.5-.2-.6L5.1 8.4c-.3-.3-.4-.7-.2-1.1s.6-.7 1-.7h3.2c.2 0 .4-.1.5-.3L11.2 3.4c.2-.3.5-.4.8-.4z"/></svg>
+</button>
+
+<!-- Novo botão para buscar ajuda com a IA -->
+<button type="button" id="help-btn" title="Onde buscar ajuda?" class="flex-shrink-0 bg-blue-500 text-white rounded-full p-3 hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 shadow-sm">
+✨ Ajuda
+</button>
+
+<input type="text" id="user-input" placeholder="Pergunte sobre violência doméstica por RA ou outras questões..." required class="flex-1 w-full px-5 py-3 text-gray-700 bg-gray-100 rounded-full border-transparent focus:outline-none focus:ring-2 focus:ring-pink-500 transition duration-300" />
+<button type="submit" class="bg-pink-600 text-white rounded-full p-3 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-600 transition duration-300 shadow-sm">
+<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+</button>
+</form>
+</div>
+
+<script>
+// --- ELEMENTOS DO DOM ---
+const form = document.getElementById("chat-form");
+const input = document.getElementById("user-input");
+const chatWindow = document.getElementById("chat-window");
+const typingIndicator = document.getElementById("typing-indicator");
+const suggestBtn = document.getElementById("suggest-btn");
+const suggestionsBox = document.getElementById("suggestions-box");
+const suggestionsList = document.getElementById("suggestions-list");
+const helpBtn = document.getElementById("help-btn"); // Novo botão de ajuda
+
+// Variável para a instância do gráfico Chart.js (não mais usada neste arquivo)
+let myCrimeChart = null;
+
+// CHAVE DA API DO GEMINI - DEIXADA VAZIA PARA SER INJETADA PELO AMBIENTE.
+// SE VOCÊ ESTIVER RODANDO ESTE ARQUIVO LOCALMENTE (FORA DO AMBIENTE DO CANVAS),
+// VOCÊ PRECISA INSERIR SUA CHAVE DE API REAL AQUI, ENTRE ASPAS DUPLAS:
+const apiKey = "AIzaSyCzje_09ymjuDuh2aCFpVQr6ljze8NNSDQ";
+
+// --- DADOS DE VIOLÊNCIA DOMÉSTICA POR RA (JANEIRO-MARÇO 2023/2024) ---
+// Estes dados foram extraídos da "Análise de Fenômenos de Segurança Pública nº. 016/2024-COOAFESP/SGI"
+// do Governo do Distrito Federal, Secretaria de Estado da Segurança Pública.
+// Tabela 1 - Crimes de Violência Doméstica ou Familiar por Região Administrativa - Jan/mar - 2023/24.
+const domesticViolenceDataDF = {
+"ceilandia": [
+{ ano: "Jan/Mar 2023", crimes: 586 },
+{ ano: "Jan/Mar 2024", crimes: 665 }
+],
+"planaltina": [
+{ ano: "Jan/Mar 2023", crimes: 398 },
+{ ano: "Jan/Mar 2024", crimes: 391 }
+],
+"samambaia": [
+{ ano: "Jan/Mar 2023", crimes: 372 },
+{ ano: "Jan/Mar 2024", crimes: 389 }
+],
+"taguatinga": [
+{ ano: "Jan/Mar 2023", crimes: 248 },
+{ ano: "Jan/Mar 2024", crimes: 281 }
+],
+"recanto das emas": [
+{ ano: "Jan/Mar 2023", crimes: 245 },
+{ ano: "Jan/Mar 2024", crimes: 272 }
+],
+"sao sebastiao": [
+{ ano: "Jan/Mar 2023", crimes: 235 },
+{ ano: "Jan/Mar 2024", crimes: 243 }
+],
+"santa maria": [
+{ ano: "Jan/Mar 2023", crimes: 216 },
+{ ano: "Jan/Mar 2024", crimes: 235 }
+],
+"gama": [
+{ ano: "Jan/Mar 2023", crimes: 254 },
+{ ano: "Jan/Mar 2024", crimes: 229 }
+],
+"sol nascente/por do sol": [
+{ ano: "Jan/Mar 2023", crimes: 205 },
+{ ano: "Jan/Mar 2024", crimes: 227 }
+],
+"brasilia": [ // No documento, é "BRASILIA" para a RA01 (Plano Piloto)
+{ ano: "Jan/Mar 2023", crimes: 210 },
+{ ano: "Jan/Mar 2024", crimes: 209 }
+],
+"paranoa": [
+{ ano: "Jan/Mar 2023", crimes: 145 },
+{ ano: "Jan/Mar 2024", crimes: 169 }
+],
+"sobradinho 2": [
+{ ano: "Jan/Mar 2023", crimes: 140 },
+{ ano: "Jan/Mar 2024", crimes: 157 }
+],
+"itapoa": [
+{ ano: "Jan/Mar 2023", crimes: 176 },
+{ ano: "Jan/Mar 2024", crimes: 139 }
+],
+"guara": [
+{ ano: "Jan/Mar 2023", crimes: 135 },
+{ ano: "Jan/Mar 2024", crimes: 116 }
+],
+"estrutural": [
+{ ano: "Jan/Mar 2023", crimes: 142 },
+{ ano: "Jan/Mar 2024", crimes: 112 }
+],
+"brazlandia": [
+{ ano: "Jan/Mar 2023", crimes: 104 },
+{ ano: "Jan/Mar 2024", crimes: 112 }
+],
+"sobradinho": [
+{ ano: "Jan/Mar 2023", crimes: 129 },
+{ ano: "Jan/Mar 2024", crimes: 109 }
+],
+"vicente pires": [
+{ ano: "Jan/Mar 2023", crimes: 105 },
+{ ano: "Jan/Mar 2024", crimes: 107 }
+],
+"riacho fundo 2": [
+{ ano: "Jan/Mar 2023", crimes: 105 },
+{ ano: "Jan/Mar 2024", crimes: 87 }
+],
+"riacho fundo": [
+{ ano: "Jan/Mar 2023", crimes: 93 },
+{ ano: "Jan/Mar 2024", crimes: 67 }
+],
+"aguas claras": [
+{ ano: "Jan/Mar 2023", crimes: 91 },
+{ ano: "Jan/Mar 2024", crimes: 64 }
+],
+"arniqueira": [
+{ ano: "Jan/Mar 2023", crimes: 69 },
+{ ano: "Jan/Mar 2024", crimes: 52 }
+],
+"jardim botanico": [
+{ ano: "Jan/Mar 2023", crimes: 42 },
+{ ano: "Jan/Mar 2024", crimes: 35 }
+],
+"cruzeiro": [
+{ ano: "Jan/Mar 2023", crimes: 30 },
+{ ano: "Jan/Mar 2024", crimes: 35 }
+],
+"nucleo bandeirante": [
+{ ano: "Jan/Mar 2023", crimes: 32 },
+{ ano: "Jan/Mar 2024", crimes: 31 }
+],
+"sudoeste": [
+{ ano: "Jan/Mar 2023", crimes: 26 },
+{ ano: "Jan/Mar 2024", crimes: 26 }
+],
+"lago norte": [
+{ ano: "Jan/Mar 2023", crimes: 43 },
+{ ano: "Jan/Mar 2024", crimes: 24 }
+],
+"fercal": [
+{ ano: "Jan/Mar 2023", crimes: 34 },
+{ ano: "Jan/Mar 2024", crimes: 20 }
+],
+"lago sul": [
+{ ano: "Jan/Mar 2023", crimes: 11 },
+{ ano: "Jan/Mar 2024", crimes: 19 }
+],
+"varjao do torto": [
+{ ano: "Jan/Mar 2023", crimes: 23 },
+{ ano: "Jan/Mar 2024", crimes: 18 }
+],
+"candangolandia": [
+{ ano: "Jan/Mar 2023", crimes: 29 },
+{ ano: "Jan/Mar 2024", crimes: 17 }
+],
+"park way": [
+{ ano: "Jan/Mar 2023", crimes: 14 },
+{ ano: "Jan/Mar 2024", crimes: 11 }
+],
+"sia": [
+{ ano: "Jan/Mar 2023", crimes: 13 },
+{ ano: "Jan/Mar 2024", crimes: 6 }
+]
+};
+
+// --- FUNÇÕES AUXILIARES ---
+
+/** * Adiciona uma mensagem na janela do chat.
+* @param {string} text O conteúdo da mensagem.
+* @param {string} sender O remetente da mensagem ('user' ou 'bot').
+* @param {string|null} id Um ID opcional para a bolha da mensagem.
+* @param {boolean} removeMarkdown Se verdadeiro, remove formatação Markdown (como **).
+*/
+const addMessage = (text, sender, id = null, removeMarkdown = false) => {
+const messageWrapper = document.createElement("div");
+const messageBubble = document.createElement("div");
+const messageContainer = document.createElement("div");
+
+messageWrapper.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'}`;
+messageContainer.className = `p-3 rounded-2xl max-w-sm md:max-w-md shadow-sm ${
+sender === 'user'
+? 'bg-pink-600 text-white rounded-br-none' /* Cor de tema para violência doméstica */
+: 'bg-gray-200 text-gray-800 rounded-bl-none'
+}`;
+
+// Remove caracteres de formatação Markdown ou adiciona como HTML se removeMarkdown for false
+if (removeMarkdown) {
+messageContainer.innerText = text.replace(/\*\*/g, '').replace(/_/g, '').replace(/~/g, '');
+} else {
+messageContainer.innerHTML = text;
+}
+
+if (id) messageContainer.id = id;
+
+messageBubble.appendChild(messageContainer);
+messageWrapper.appendChild(messageBubble);
+chatWindow.appendChild(messageWrapper);
+chatWindow.scrollTop = chatWindow.scrollHeight; // Rola para o final da conversa
+};
+
+/** * Mostra ou esconde o indicador de "digitando...".
+* @param {boolean} show Verdadeiro para mostrar, Falso para esconder.
+*/
+const setTyping = (show) => {
+typingIndicator.classList.toggle('hidden', !show);
+if (show) {
+chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+};
+
+/** * Simula uma resposta do bot com um pequeno delay.
+* @param {string} message A mensagem que o bot deve "responder".
+* @param {boolean} removeMarkdown Se verdadeiro, remove formatação Markdown.
+*/
+const respondBotMessage = (message, removeMarkdown = false) => {
+setTyping(true);
+setTimeout(() => {
+setTyping(false);
+addMessage(message, 'bot', null, removeMarkdown); // Passa o parâmetro removeMarkdown
+}, 1000); // Pequeno atraso para simular o "digitando"
+};
+
+/** * Envia um prompt para a API Gemini e retorna a resposta.
+* @param {string} prompt - O prompt para enviar para a IA.
+* @returns {Promise<string>} - A resposta da IA.
+*/
+async function callGemini(prompt) {
+setTyping(true);
+
+const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+// System prompt atualizado para as novas funcionalidades
+const systemPrompt = `Você é um assistente virtual amigável e prestativo, especializado em dados de violência doméstica/familiar no Distrito Federal e em fornecer informações gerais.
+1. Para perguntas sobre violência doméstica em RAs (2023/2024, Jan/Mar), forneça os dados numéricos de forma concisa e direta, informando a fonte (SSP-DF, Análise nº. 016/2024).
+2. Para solicitações de 'onde buscar ajuda' para violência doméstica, forneça contatos, órgãos e dicas de segurança relevantes para o Brasil e DF.
+3. Para outras perguntas gerais, forneça respostas informativas e curtas.
+4. Se não souber a resposta ou a pergunta estiver muito fora de escopo, diga que não tem essa informação ou peça para o usuário ser mais específico.`;
+
+const payload = {
+contents: [{
+role: "user",
+parts: [{ text: `${systemPrompt}\n\nPERGUNTA: ${prompt}` }]
+}]
+};
+
+try {
+const response = await fetch(apiUrl, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify(payload)
+});
+if (!response.ok) {
+const errorData = await response.json().catch(() => ({}));
+const errorMessage = errorData.error && errorData.error.message ? errorData.error.message : response.statusText;
+throw new Error(`Ocorreu um erro ao conectar com o assistente de IA. Detalhes: ${errorMessage}.`);
+}
+const result = await response.json();
+if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+return result.candidates[0].content.parts[0].text;
+}
+return "Não consegui processar a resposta do Gemini. Tente novamente ou formule a pergunta de outra forma.";
+} catch (error) {
+console.error("Erro ao chamar a API Gemini:", error);
+// Retorna a mensagem de erro detalhada da API para o usuário
+return error.message;
+} finally {
+setTyping(false);
+}
+}
+
+/**
+* Gera e exibe um resumo dos dados de violência doméstica para uma RA usando a IA.
+* @param {string} raName O nome da Região Administrativa.
+* @param {Array<Object>} data Os dados de violência doméstica para a RA.
+*/
+const handleSummarizeData = async (raName, data) => {
+// Formata os dados para o prompt
+let dataSummary = `Dados de violência doméstica em ${raName.toUpperCase()}:\n`;
+data.forEach(item => {
+dataSummary += `- ${item.ano}: ${item.crimes} ocorrências\n`;
+});
+
+const summarizePrompt = `Com base nos seguintes dados de violência doméstica em ${raName.toUpperCase()} (1º trimestre de 2023/2024):\n${dataSummary}\n\nPor favor, resuma as principais observações ou tendências desses dados em 2 a 3 frases curtas e diretas.`;
+const summary = await callGemini(summarizePrompt);
+
+respondBotMessage(`✨ **Resumo dos dados para ${raName.toUpperCase()}**: ${summary}`, true); // removeMarkdown aqui para garantir que o resumo seja limpo
+};
+
+/**
+* Lida com a solicitação de onde buscar ajuda para violência doméstica.
+*/
+const handleHelpRequest = async () => {
+const helpPrompt = `Por favor, forneça informações úteis sobre onde buscar ajuda para vítimas de violência doméstica e familiar no Brasil, com foco no Distrito Federal. Inclua números de telefone de denúncia (como 180, 190), órgãos de apoio (como Delegacias Especiais de Atendimento à Mulher - DEAMs) e conselhos gerais de segurança. Mantenha a resposta clara e direta.`;
+const helpInfo = await callGemini(helpPrompt);
+respondBotMessage(`✨ **Onde buscar ajuda para violência doméstica**: ${helpInfo}`, true); // removeMarkdown para garantir que a resposta seja limpa
+};
+
+/** Gera e exibe sugestões de perguntas adaptadas aos dois temas. */
+const handleSuggestQuestions = async () => {
+// Usar Gemini para gerar sugestões dinâmicas
+// Prompt ajustado para pedir perguntas MUITO curtas e diretas, sem formatação Markdown.
+const promptForSuggestions = "Sugira 5 perguntas MUITO curtas e diretas (sem negrito, itálico ou qualquer formatação Markdown). Inclua perguntas sobre violência doméstica em RAs (ex: 'Violência em Ceilândia?') e perguntas gerais sobre o DF (ex: 'Qual a capital do Brasil?'). Separe cada pergunta por um pipeline '|'. Exemplo: Violência em Taguatinga?|Qual a capital do Brasil?|População de Brasília?|Lei Maria da Penha?|Onde denunciar violência doméstica?";
+const suggestionsText = await callGemini(promptForSuggestions);
+
+suggestionsList.innerHTML = ''; // Limpa sugestões anteriores
+
+// Processa as sugestões removendo formatação Markdown e garantindo que são limpas
+const questions = suggestionsText.split('|')
+.map(q => q.trim().replace(/\*\*/g, '').replace(/_/g, '').replace(/~/g, ''))
+.filter(q => q.length > 0);
+
+questions.forEach(q => {
+const btn = document.createElement('button');
+btn.textContent = q; // Usa textContent para garantir texto puro
+btn.className = 'suggestion-btn text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full hover:bg-gray-200';
+btn.onclick = () => {
+input.value = q;
+form.dispatchEvent(new Event('submit')); // Simula o envio do formulário
+suggestionsBox.classList.add('hidden'); // Esconde a caixa de sugestões
+};
+suggestionsList.appendChild(btn);
+});
+
+suggestionsBox.classList.remove('hidden'); // Mostra a caixa de sugestões
+chatWindow.scrollTop = chatWindow.scrollHeight;
+};
+
+// --- LÓGICA PRINCIPAL ---
+
+/** Lida com o envio do formulário (botão de enviar ou Enter). */
+const handleFormSubmit = async (event) => {
+event.preventDefault(); // Impede o recarregamento da página
+const userQuestion = input.value.trim();
+if (!userQuestion) return; // Não faz nada se a entrada estiver vazia
+
+suggestionsBox.classList.add('hidden'); // Esconde as sugestões ao enviar
+addMessage(userQuestion, 'user'); // Adiciona a mensagem do usuário ao chat
+input.value = ""; // Limpa o campo de entrada
+
+const lowerCaseQuestion = userQuestion.toLowerCase();
+
+let handledByDomesticViolenceQuery = false;
+const rasDoDF = Object.keys(domesticViolenceDataDF); // Nomes das RAs disponíveis nos dados
+
+// Tenta encontrar uma RA e uma palavra-chave de violência doméstica na pergunta
+for (const ra of rasDoDF) {
+if (lowerCaseQuestion.includes(ra) &&
+(lowerCaseQuestion.includes("violencia domestica") || lowerCaseQuestion.includes("violência doméstica") ||
+lowerCaseQuestion.includes("maria da penha") || lowerCaseQuestion.includes("casos de violencia") ||
+lowerCaseQuestion.includes("violencia em") || lowerCaseQuestion.includes("dados de violencia")))
+{
+const dataForRa = domesticViolenceDataDF[ra];
+console.log('handleFormSubmit: RA encontrada:', ra, 'Dados para RA:', dataForRa);
+if (dataForRa && dataForRa.length > 0) {
+// Formata os dados em uma tabela de texto
+let dataTable = `<div class="data-table">Casos de Violência Doméstica em ${ra.toUpperCase()}:\n`;
+dataTable += `------------------------------------\n`;
+dataForRa.forEach(item => {
+// Garante alinhamento com espaços fixos (ajuste conforme o maior 'ano' e 'crimes')
+const anoPadded = item.ano.padEnd(15);
+dataTable += `${anoPadded} | ${item.crimes} ocorrências\n`;
+});
+dataTable += `------------------------------------\n`;
+dataTable += `Fonte: SSP-DF, Análise nº. 016/2024</div>`;
+
+respondBotMessage(
+`Aqui estão os dados de **violência doméstica e familiar** para **${ra.toUpperCase()}** no 1º trimestre de 2023 e 2024:` + dataTable +
+`<br><button class="action-btn text-xs text-purple-600 mt-2 bg-purple-100 px-2 py-1 rounded-full hover:bg-purple-200 transition" onclick="handleSummarizeData('${ra}', ${JSON.stringify(dataForRa).replace(/"/g, '&quot;')})">✨ Resumir Dados</button>`
+);
+handledByDomesticViolenceQuery = true;
+break;
+} else {
+// Caso a RA seja reconhecida, mas não haja dados para ela
+respondBotMessage(`Desculpe, não encontrei dados específicos de violência doméstica para **${ra.toUpperCase()}** no momento.`);
+handledByDomesticViolenceQuery = true;
+break;
+}
+}
+}
+
+// Se a pergunta não foi sobre violência doméstica em RA, passa para o Gemini
+if (!handledByDomesticViolenceQuery) {
+console.log('handleFormSubmit: Pergunta não é sobre violência doméstica em RA, chamando Gemini.');
+const botResponse = await callGemini(userQuestion);
+// Para a resposta geral do Gemini, removemos qualquer formatação Markdown indesejada.
+addMessage(botResponse, 'bot', null, true);
+}
+};
+
+// --- EVENT LISTENERS ---
+form.addEventListener("submit", handleFormSubmit);
+suggestBtn.addEventListener("click", handleSuggestQuestions);
+helpBtn.addEventListener("click", handleHelpRequest); // Event listener para o novo botão de ajuda
+
+// Mensagem de boas-vindas inicial do bot ao carregar a página
+window.addEventListener('load', () => {
+setTyping(true);
+setTimeout(() => {
+setTyping(false);
+addMessage("Olá! Sou o seu assistente de IA focado em dados de **violência doméstica e familiar** para RAs do DF (como **Ceilândia, Paranoá, Brasília**) e **perguntas gerais**. Posso te mostrar dados em tabela. Para ajuda, clique no botão '✨ Ajuda'.", 'bot');
+}, 1000);
+});
+
+</script>
+</body>
+</html>
