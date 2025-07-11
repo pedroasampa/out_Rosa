@@ -14,7 +14,7 @@ Este projeto foi desenvolvido com dedicação por:
 
 - **André Luan** - [GitHub](https://github.com/andorelol)
 - **Pedro Augusto** - [GitHub](https://github.com/pedroasampa)
-- **Raphael Guthyer** - (Adicione o link do GitHub aqui se houver)
+- **Raphael Guthyer** - [GitHub](https://github.com/guthyer)
 
 ---
 
